@@ -256,7 +256,12 @@ namespace DotNext.Reflection
     {
         private sealed class Cache<T> : MemberCache<PropertyInfo, Indexer<A, V>>
         {
-            private protected override Indexer<A, V> Create(string propertyName, bool nonPublic) => Reflect(typeof(T), propertyName, nonPublic);
+            private static Indexer<A, V> Create(MemberKey indexerInfo) => Reflect(typeof(T), indexerInfo.Name, indexerInfo.NonPublic);
+
+            public Cache()
+                : base(Create)
+            {
+            }
         }
         private const BindingFlags PublicFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy;
         private const BindingFlags NonPublicFlags = BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
@@ -357,7 +362,7 @@ namespace DotNext.Reflection
         }
 
         internal static Indexer<A, V> GetOrCreate<T>(string propertyName, bool nonPublic)
-            => Cache<T>.Of<Cache<T>>(typeof(T)).GetOrCreate(propertyName, nonPublic);
+            => Cache<T>.Of<Cache<T>>(typeof(T)).GetOrAdd(propertyName, nonPublic);
     }
 
     /// <summary>
@@ -371,7 +376,12 @@ namespace DotNext.Reflection
     {
         private sealed class Cache : MemberCache<PropertyInfo, Indexer<T, A, V>>
         {
-            private protected override Indexer<T, A, V> Create(string propertyName, bool nonPublic) => Reflect(propertyName, nonPublic);
+            private static Indexer<T, A, V> Create(MemberKey indexerInfo) => Reflect(indexerInfo.Name, indexerInfo.NonPublic);
+
+            public Cache()
+                : base(Create)
+            {
+            }
         }
         private const BindingFlags PublicFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
         private const BindingFlags NonPublicFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
@@ -475,6 +485,6 @@ namespace DotNext.Reflection
         }
 
         internal static Indexer<T, A, V> GetOrCreate(string propertyName, bool nonPublic)
-            => Cache.Of<Cache>(typeof(T)).GetOrCreate(propertyName, nonPublic);
+            => Cache.Of<Cache>(typeof(T)).GetOrAdd(propertyName, nonPublic);
     }
 }

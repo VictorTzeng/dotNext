@@ -16,12 +16,22 @@ namespace DotNext.Reflection
     {
         private sealed class Cache : MemberCache<MethodInfo, Method<D>>
         {
-            private protected override Method<D> Create(string methodName, bool nonPublic) => Reflect(methodName, nonPublic);
+            private static Method<D> Create(MemberKey methodInfo) => Reflect(methodInfo.Name, methodInfo.NonPublic);
+
+            public Cache()
+                : base(Create)
+            {
+            }
         }
 
         private sealed class Cache<T> : MemberCache<MethodInfo, Method<D>>
         {
-            private protected override Method<D> Create(string methodName, bool nonPublic) => Reflect(typeof(T), methodName, nonPublic);
+            private static Method<D> Create(MemberKey methodInfo) => Reflect(typeof(T), methodInfo.Name, methodInfo.NonPublic);
+
+            public Cache()
+                : base(Create)
+            {
+            }
         }
 
         private static readonly UserDataSlot<Method<D>> CacheSlot = UserDataSlot<Method<D>>.Allocate();
@@ -561,7 +571,7 @@ namespace DotNext.Reflection
                     cache = null;
                     break;
             }
-            return cache?.GetOrCreate(methodName, nonPublic);
+            return cache?.GetOrAdd(methodName, nonPublic);
         }
     }
 }

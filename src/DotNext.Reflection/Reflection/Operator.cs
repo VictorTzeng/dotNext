@@ -115,6 +115,11 @@ namespace DotNext.Reflection
         {
             private static readonly UserDataSlot<Cache<Op>> Slot = UserDataSlot<Cache<Op>>.Allocate();
 
+            private protected Cache(Func<Operator.Kind, Op> factory)
+                : base(factory)
+            {
+            }
+
             internal static Cache<Op> Of<C>(Type cacheHolder)
                 where C : Cache<Op>, new()
                 => cacheHolder.GetUserData().GetOrSet<Cache<Op>, C>(Slot);

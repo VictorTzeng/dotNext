@@ -87,7 +87,12 @@ namespace DotNext.Reflection
     {
         private sealed class Cache : Cache<UnaryOperator<T, R>>
         {
-            private protected override UnaryOperator<T, R> Create(Operator.Kind kind) => Reflect(kind);
+            private static UnaryOperator<T, R> Create(Operator.Kind kind) => Reflect(kind);
+
+            public Cache()
+                : base(Create)
+            {
+            }
         }
 
         private UnaryOperator(Expression<Operator<T, R>> invoker, UnaryOperator type, MethodInfo overloaded)
@@ -162,7 +167,7 @@ namespace DotNext.Reflection
                 return new UnaryOperator<T, R>(result, op, overloaded);
         }
 
-        private static UnaryOperator<T, R> GetOrCreate(Operator.Kind op) => Cache.Of<Cache>(typeof(T)).GetOrCreate(op);
+        private static UnaryOperator<T, R> GetOrCreate(Operator.Kind op) => Cache.Of<Cache>(typeof(T)).GetOrAdd(op);
 
         internal static UnaryOperator<T, R> GetOrCreate(UnaryOperator @operator, OperatorLookup lookup)
         {

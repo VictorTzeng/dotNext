@@ -242,7 +242,12 @@ namespace DotNext.Reflection
 
         private sealed class Cache : MemberCache<FieldInfo, Field<T, V>>
         {
-            private protected override Field<T, V> Create(string fieldName, bool nonPublic) => Reflect(fieldName, nonPublic);
+            private static Field<T, V> Create(MemberKey fieldInfo) => Reflect(fieldInfo.Name, fieldInfo.NonPublic);
+
+            public Cache()
+                : base(Create)
+            {
+            }
         }
 
         private static readonly UserDataSlot<Field<T, V>> CacheSlot = UserDataSlot<Field<T, V>>.Allocate();
@@ -369,7 +374,7 @@ namespace DotNext.Reflection
         }
 
         internal static Field<T, V> GetOrCreate(string fieldName, bool nonPublic)
-            => Cache.Of<Cache>(typeof(T)).GetOrCreate(fieldName, nonPublic);
+            => Cache.Of<Cache>(typeof(T)).GetOrAdd(fieldName, nonPublic);
 
         private static Field<T, V> Unreflect(FieldInfo field)
             => field.IsStatic ? throw new ArgumentException(ExceptionMessages.InstanceFieldExpected, nameof(field)) : new Field<T, V>(field);
@@ -387,7 +392,12 @@ namespace DotNext.Reflection
 
         private sealed class Cache<T> : MemberCache<FieldInfo, Field<V>>
         {
-            private protected override Field<V> Create(string fieldName, bool nonPublic) => Reflect(typeof(T), fieldName, nonPublic);
+            private static Field<V> Create(MemberKey fieldInfo) => Reflect(typeof(T), fieldInfo.Name, fieldInfo.NonPublic);
+
+            public Cache()
+                : base(Create)
+            {
+            }
         }
 
         private static readonly UserDataSlot<Field<V>> CacheSlot = UserDataSlot<Field<V>>.Allocate();
@@ -512,6 +522,6 @@ namespace DotNext.Reflection
         internal static Field<V> GetOrCreate(FieldInfo field) => field.GetUserData().GetOrSet(CacheSlot, field, new ValueFunc<FieldInfo, Field<V>>(Unreflect));
 
         internal static Field<V> GetOrCreate<T>(string fieldName, bool nonPublic)
-            => Cache<T>.Of<Cache<T>>(typeof(T)).GetOrCreate(fieldName, nonPublic);
+            => Cache<T>.Of<Cache<T>>(typeof(T)).GetOrAdd(fieldName, nonPublic);
     }
 }

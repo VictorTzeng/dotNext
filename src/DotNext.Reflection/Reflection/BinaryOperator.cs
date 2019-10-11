@@ -122,7 +122,12 @@ namespace DotNext.Reflection
     {
         private sealed class Cache : Cache<BinaryOperator<Op1, Op2, R>>
         {
-            private protected override BinaryOperator<Op1, Op2, R> Create(Operator.Kind kind) => Reflect(kind);
+            private static BinaryOperator<Op1, Op2, R> Create(Operator.Kind kind) => Reflect(kind);
+
+            public Cache()
+                : base(Create)
+            {
+            }
         }
 
         private BinaryOperator(Expression<Operator<Op1, Op2, R>> invoker, BinaryOperator type, MethodInfo overloaded)
@@ -186,7 +191,7 @@ namespace DotNext.Reflection
             return expr is null ? null : new BinaryOperator<Op1, Op2, R>(expr, op, overloaded);
         }
 
-        private static BinaryOperator<Op1, Op2, R> GetOrCreate(Operator.Kind op) => Cache.Of<Cache>(typeof(Op1)).GetOrCreate(op);
+        private static BinaryOperator<Op1, Op2, R> GetOrCreate(Operator.Kind op) => Cache.Of<Cache>(typeof(Op1)).GetOrAdd(op);
 
         internal static BinaryOperator<Op1, Op2, R> GetOrCreate(BinaryOperator @operator, OperatorLookup lookup)
         {

@@ -238,8 +238,14 @@ namespace DotNext.Reflection
     {
         private sealed class Cache<T> : MemberCache<EventInfo, Event<D>>
         {
-            private protected override Event<D> Create(string eventName, bool nonPublic) => Reflect(typeof(T), eventName, nonPublic);
+            public Cache()
+                : base(Create)
+            {
+            }
+
+            private static Event<D> Create(MemberKey eventInfo) => Reflect(typeof(T), eventInfo.Name, eventInfo.NonPublic);
         }
+
         private const BindingFlags PublicFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly;
         private const BindingFlags NonPublicFlags = BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
@@ -350,7 +356,7 @@ namespace DotNext.Reflection
         }
 
         internal static Event<D> GetOrCreate<T>(string eventName, bool nonPublic)
-            => Cache<T>.Of<Cache<T>>(typeof(T)).GetOrCreate(eventName, nonPublic);
+            => Cache<T>.Of<Cache<T>>(typeof(T)).GetOrAdd(eventName, nonPublic);
     }
 
     /// <summary>
@@ -363,7 +369,12 @@ namespace DotNext.Reflection
     {
         private sealed class Cache : MemberCache<EventInfo, Event<T, D>>
         {
-            private protected override Event<T, D> Create(string eventName, bool nonPublic) => Reflect(eventName, nonPublic);
+            private static Event<T, D> Create(MemberKey eventInfo) => Reflect(eventInfo.Name, eventInfo.NonPublic);
+        
+            public Cache()
+                : base(Create)
+            {
+            }
         }
 
         private const BindingFlags PublicFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
@@ -504,6 +515,6 @@ namespace DotNext.Reflection
         }
 
         internal static Event<T, D> GetOrCreate(string eventName, bool nonPublic)
-            => Cache.Of<Cache>(typeof(T)).GetOrCreate(eventName, nonPublic);
+            => Cache.Of<Cache>(typeof(T)).GetOrAdd(eventName, nonPublic);
     }
 }

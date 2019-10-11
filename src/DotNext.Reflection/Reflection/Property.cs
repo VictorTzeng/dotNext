@@ -266,9 +266,12 @@ namespace DotNext.Reflection
     {
         private sealed class Cache<T> : MemberCache<PropertyInfo, Property<V>>
         {
-            internal static readonly UserDataSlot<Cache<T>> Slot = UserDataSlot<Cache<T>>.Allocate();
-
-            private protected override Property<V> Create(string propertyName, bool nonPublic) => Reflect(typeof(T), propertyName, nonPublic);
+            private static Property<V> Create(MemberKey propertyInfo) => Reflect(typeof(T), propertyInfo.Name, propertyInfo.NonPublic);
+        
+            public Cache()
+                : base(Create)
+            {
+            }
         }
         private const BindingFlags PublicFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly;
         private const BindingFlags NonPublicFlags = BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
@@ -365,7 +368,7 @@ namespace DotNext.Reflection
         }
 
         internal static Property<V> GetOrCreate<T>(string propertyName, bool nonPublic)
-            => typeof(T).GetUserData().GetOrSet(Cache<T>.Slot).GetOrCreate(propertyName, nonPublic);
+            => Cache<T>.Of<Cache<T>>(typeof(T)).GetOrAdd(propertyName, nonPublic);
     }
 
     /// <summary>
@@ -377,9 +380,12 @@ namespace DotNext.Reflection
     {
         private sealed class Cache : MemberCache<PropertyInfo, Property<T, V>>
         {
-            internal static readonly UserDataSlot<Cache> Slot = UserDataSlot<Cache>.Allocate();
+            private static Property<T, V> Create(MemberKey propertyInfo) => Reflect(propertyInfo.Name, propertyInfo.NonPublic);
 
-            private protected override Property<T, V> Create(string propertyName, bool nonPublic) => Reflect(propertyName, nonPublic);
+            public Cache()
+                : base(Create)
+            {
+            }
         }
         private const BindingFlags PublicFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
         private const BindingFlags NonPublicFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
@@ -481,6 +487,6 @@ namespace DotNext.Reflection
         }
 
         internal static Property<T, V> GetOrCreate(string propertyName, bool nonPublic)
-            => typeof(T).GetUserData().GetOrSet(Cache.Slot).GetOrCreate(propertyName, nonPublic);
+            => Cache.Of<Cache>(typeof(T)).GetOrAdd(propertyName, nonPublic);
     }
 }

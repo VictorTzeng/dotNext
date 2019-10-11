@@ -1,68 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace DotNext.Reflection
 {
-    internal abstract class Cache<K, V> : Disposable
+    internal class Cache<K, V> : ConcurrentDictionary<K, V>
         where V : class
     {
-        private readonly Dictionary<K, V> elements;
-        private readonly ReaderWriterLockSlim syncObject;
+        private readonly Func<K, V> factory;
 
-        private protected Cache(IEqualityComparer<K> comparer)
-        {
-            elements = new Dictionary<K, V>(comparer);
-            syncObject = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
-        }
+        private protected Cache(IEqualityComparer<K> comparer, Func<K, V> factory)
+            : base(comparer)
+            => this.factory = factory;
 
-        private protected Cache()
-            : this(EqualityComparer<K>.Default)
+        private protected Cache(Func<K, V> factory)
+            : this(EqualityComparer<K>.Default, factory)
         {
         }
 
-        private protected abstract V Create(K cacheKey);
-
-        internal V GetOrCreate(K cacheKey)
-        {
-            syncObject.EnterReadLock();
-            var exists = elements.TryGetValue(cacheKey, out var item);
-            syncObject.ExitReadLock();
-            if (exists) return item;
-            //non-fast path, discover item
-            syncObject.EnterUpgradeableReadLock();
-            exists = elements.TryGetValue(cacheKey, out item);
-            if (exists)
-            {
-                syncObject.ExitUpgradeableReadLock();
-                return item;
-            }
-            else
-            {
-                syncObject.EnterWriteLock();
-                try
-                {
-                    return elements[cacheKey] = Create(cacheKey);
-                }
-                finally
-                {
-                    syncObject.ExitWriteLock();
-                    syncObject.ExitUpgradeableReadLock();
-                }
-            }
-        }
-
-        protected sealed override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                syncObject.Dispose();
-                elements.Clear();
-            }
-            base.Dispose(disposing);
-        }
+        internal V GetOrAdd(K cacheKey) => GetOrAdd(cacheKey, factory);
     }
 
     [StructLayout(LayoutKind.Auto)]
@@ -96,11 +54,12 @@ namespace DotNext.Reflection
     {
         private static readonly UserDataSlot<MemberCache<M, E>> Slot = UserDataSlot<MemberCache<M, E>>.Allocate();
 
-        internal E GetOrCreate(string memberName, bool nonPublic) => GetOrCreate(new MemberKey(memberName, nonPublic));
+        private protected MemberCache(Func<MemberKey, E> factory)
+            : base(factory)
+        {
+        }
 
-        private protected abstract E Create(string memberName, bool nonPublic);
-
-        private protected sealed override E Create(MemberKey key) => Create(key.Name, key.NonPublic);
+        internal E GetOrAdd(string memberName, bool nonPublic) => GetOrAdd(new MemberKey(memberName, nonPublic));
 
         internal static MemberCache<M, E> Of<C>(MemberInfo member)
             where C : MemberCache<M, E>, new()
