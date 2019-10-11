@@ -21,6 +21,11 @@ namespace DotNext.Threading
 
         public bool IsReadLockHeld => state.VolatileRead() > NoLockState;
 
+        /// <summary>
+        /// Gets the total number of unique threads that have entered the lock in read mode.
+        /// </summary>
+        public int CurrentReadCount => Math.Max(0, state.VolatileRead());
+
         public void EnterReadLock()
         {
             for (var spinner = new SpinWait(); ;)
